@@ -1,0 +1,142 @@
+# n8n Docker Environment Configuration
+# Kopiere diese Datei zu .env und passe die Werte an deine Umgebung an
+
+# ==============================================
+# n8n BASIC AUTHENTICATION
+# ==============================================
+# WICHTIG: Ändere diese Standard-Zugangsdaten vor der Produktionsnutzung!
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=changeme123!
+
+# ==============================================
+# n8n SERVER CONFIGURATION
+# ==============================================
+# Hostname für n8n (für Produktion deine Domäne)
+N8N_HOST=localhost
+
+# Port für n8n Server
+N8N_PORT=5678
+
+# Protokoll (http für lokal, https für Produktion)
+N8N_PROTOCOL=http
+
+# Webhook URL (wichtig für eingehende Webhooks)
+WEBHOOK_URL=http://localhost:5678/
+
+# ==============================================
+# ZEITZONE UND LOKALISIERUNG
+# ==============================================
+GENERIC_TIMEZONE=Europe/Berlin
+TZ=Europe/Berlin
+
+# ==============================================
+# LOGGING UND DEBUGGING
+# ==============================================
+# Log Level: error, warn, info, verbose, debug, silly
+N8N_LOG_LEVEL=info
+
+# Diagnose-Daten an n8n senden (Datenschutz)
+N8N_DIAGNOSTICS_ENABLED=false
+
+# Update-Benachrichtigungen anzeigen
+N8N_VERSION_NOTIFICATIONS_ENABLED=false
+
+# ==============================================
+# FEATURES UND UI
+# ==============================================
+# Community Templates aktivieren
+N8N_TEMPLATES_ENABLED=true
+
+# Onboarding-Flow überspringen
+N8N_ONBOARDING_FLOW_DISABLED=false
+
+# Metriken sammeln (für Monitoring)
+N8N_METRICS=false
+
+# ==============================================
+# DATABASE CONFIGURATION
+# ==============================================
+# Datenbank-Typ (sqlite für einfache Setups, postgres für Produktion)
+DB_TYPE=sqlite
+
+# SQLite Datenbank-Pfad (wenn DB_TYPE=sqlite)
+DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+
+# PostgreSQL Konfiguration (wenn DB_TYPE=postgresdb)
+# DB_POSTGRESDB_HOST=postgres
+# DB_POSTGRESDB_PORT=5432
+# DB_POSTGRESDB_DATABASE=n8n
+# DB_POSTGRESDB_USER=n8n
+# DB_POSTGRESDB_PASSWORD=n8n_password
+# DB_POSTGRESDB_SCHEMA=public
+
+# ==============================================
+# SECURITY SETTINGS
+# ==============================================
+# Verschlüsselung für Credentials (automatisch generiert)
+# N8N_ENCRYPTION_KEY=
+
+# JWT Secret für Session-Management (automatisch generiert)
+# N8N_JWT_SECRET=
+
+# ==============================================
+# EMAIL CONFIGURATION (Optional)
+# ==============================================
+# SMTP Konfiguration für Email-Versand
+# N8N_SMTP_HOST=
+# N8N_SMTP_PORT=587
+# N8N_SMTP_USER=
+# N8N_SMTP_PASS=
+# N8N_SMTP_SENDER=
+# N8N_SMTP_SSL=false
+
+# ==============================================
+# WORKFLOW SETTINGS
+# ==============================================
+# Maximale Workflow-Ausführungszeit (in Sekunden)
+# EXECUTIONS_TIMEOUT=3600
+
+# Maximale Anzahl paralleler Workflow-Ausführungen
+# EXECUTIONS_PROCESS=10
+
+# Ausführungshistorie beibehalten (Anzahl)
+# EXECUTIONS_DATA_SAVE_ON_ERROR=all
+# EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+
+# ==============================================
+# EXTERNAL SERVICES (Optional)
+# ==============================================
+# Redis für Session-Storage (bei mehreren Instanzen)
+# QUEUE_BULL_REDIS_HOST=redis
+# QUEUE_BULL_REDIS_PORT=6379
+# QUEUE_BULL_REDIS_DB=2
+# QUEUE_BULL_REDIS_PASSWORD=
+
+# ==============================================
+# UPDATE & MAINTENANCE
+# ==============================================
+# Webhook für Update-Benachrichtigungen (Slack, Discord, etc.)
+# WEBHOOK_URL_NOTIFICATIONS=
+
+# Log-Datei für Update-Script
+# UPDATE_LOG_FILE=/var/log/n8n-update.log
+
+# Backup-Aufbewahrung in Tagen
+# BACKUP_RETENTION_DAYS=7
+
+# ==============================================
+# ANWEISUNGEN
+# ==============================================
+# 1. Kopiere diese Datei: cp .env.example .env
+# 2. Bearbeite .env und passe die Werte an
+# 3. Starte n8n: docker-compose up -d
+# 4. Zugriff: http://localhost:5678
+# 5. Login mit N8N_BASIC_AUTH_USER und N8N_BASIC_AUTH_PASSWORD
+#
+# SICHERHEITSHINWEISE:
+# - Ändere IMMER die Standard-Passwörter!
+# - Verwende HTTPS in Produktionsumgebungen
+# - Sichere die .env Datei (nicht in Git committen)
+# - Erstelle regelmäßige Backups der n8n_data/
+# - Überprüfe Log-Dateien regelmäßig

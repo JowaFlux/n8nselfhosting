@@ -1,0 +1,260 @@
+# n8n Self-Hosting Setup
+
+Dieses Repository enthält eine vollständige n8n-Selbst-Hosting-Lösung mit Docker Compose, die für schnelle Bereitstellung und einfache Wartung optimiert ist.
+
+## 🚀 One-Click-Deployment
+
+### Über GitHub (Codespaces)
+
+1. **Repository forken oder klonen:**
+   ```bash
+   git clone https://github.com/your-username/n8n-docker-setup.git
+   cd n8n-docker-setup
+   ```
+
+2. **GitHub Codespaces starten:**
+   - Klicke auf "Code" → "Codespaces" → "Create codespace on main"
+   - Warte auf die Initialisierung der Entwicklungsumgebung
+
+3. **n8n sofort starten:**
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Zugriff auf n8n:**
+   - Öffne Port 5678 in Codespaces
+   - Standard-Login: `admin` / `changeme123!`
+
+### Lokales Docker-Deployment
+
+1. **Voraussetzungen:**
+   - Docker und Docker Compose installiert
+   - Mindestens 512MB freier RAM
+   - Port 5678 verfügbar
+
+2. **Installation:**
+   ```bash
+   # Repository klonen
+   git clone https://github.com/your-username/n8n-docker-setup.git
+   cd n8n-docker-setup
+   
+   # Umgebungsvariablen anpassen (optional)
+   cp .env.example .env
+   nano .env
+   
+   # n8n starten
+   docker-compose up -d
+   ```
+
+3. **Zugriff:**
+   - Browser: `http://localhost:5678`
+   - Standard-Login: `admin` / `changeme123!`
+
+## ⚙️ Konfiguration
+
+### Umgebungsvariablen
+
+Wichtige Einstellungen in der `docker-compose.yml`:
+
+```yaml
+environment:
+  - N8N_BASIC_AUTH_USER=admin          # Benutzername ändern
+  - N8N_BASIC_AUTH_PASSWORD=changeme123!  # Passwort ändern!
+  - N8N_HOST=localhost                 # Domain für Produktion
+  - WEBHOOK_URL=http://localhost:5678/ # Webhook-URL anpassen
+  - GENERIC_TIMEZONE=Europe/Berlin     # Zeitzone anpassen
+```
+
+### Produktions-Setup
+
+Für Produktionsumgebungen:
+
+1. **Sicherheit:**
+   - Starkes Passwort setzen
+   - HTTPS konfigurieren (Reverse Proxy)
+   - Firewall-Regeln einrichten
+
+2. **Domain-Konfiguration:**
+   ```yaml
+   - N8N_HOST=your-domain.com
+   - N8N_PROTOCOL=https
+   - WEBHOOK_URL=https://your-domain.com/
+   ```
+
+3. **Reverse Proxy (Nginx/Traefik):**
+   - SSL-Zertifikat konfigurieren
+   - Port 5678 nur intern erreichbar machen
+
+## 🔄 Automatisierung & Updates
+
+### Update-Sync-Shell-Task
+
+Beispiel-Script für automatische Updates (`update-n8n.sh`):
+
+```bash
+#!/bin/bash
+
+# n8n Update Script
+# Verwendung: ./update-n8n.sh oder als Cronjob
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+echo "[$(date)] Starte n8n Update-Prozess..."
+
+# Backup der aktuellen Daten
+echo "[$(date)] Erstelle Backup..."
+cp -r n8n_data n8n_data_backup_$(date +%Y%m%d_%H%M%S)
+
+# Container stoppen
+echo "[$(date)] Stoppe n8n Container..."
+docker-compose down
+
+# Neue Images laden
+echo "[$(date)] Lade neue Docker Images..."
+docker-compose pull
+
+# Aufräumen alter Images
+echo "[$(date)] Entferne alte Images..."
+docker image prune -f
+
+# Container neu starten
+echo "[$(date)] Starte n8n neu..."
+docker-compose up -d
+
+# Gesundheitsprüfung
+echo "[$(date)] Warte auf n8n Startup..."
+sleep 30
+
+if curl -f http://localhost:5678/healthz > /dev/null 2>&1; then
+    echo "[$(date)] ✅ n8n Update erfolgreich!"
+    # Alte Backups nach 7 Tagen löschen
+    find . -name "n8n_data_backup_*" -type d -mtime +7 -exec rm -rf {} +
+else
+    echo "[$(date)] ❌ n8n Update fehlgeschlagen! Stelle Backup wieder her..."
+    docker-compose down
+    rm -rf n8n_data
+    mv n8n_data_backup_$(date +%Y%m%d_%H%M%S) n8n_data
+    docker-compose up -d
+fi
+
+echo "[$(date)] Update-Prozess abgeschlossen."
+```
+
+### Cronjob-Einrichtung
+
+```bash
+# Script ausführbar machen
+chmod +x update-n8n.sh
+
+# Cronjob hinzufügen (jeden Sonntag um 3:00 Uhr)
+crontab -e
+
+# Folgende Zeile hinzufügen:
+0 3 * * 0 /path/to/your/n8n-docker-setup/update-n8n.sh >> /var/log/n8n-update.log 2>&1
+```
+
+### Monitoring Script
+
+Überwachungs-Script (`monitor-n8n.sh`):
+
+```bash
+#!/bin/bash
+
+# n8n Health Check
+if ! curl -f http://localhost:5678/healthz > /dev/null 2>&1; then
+    echo "[$(date)] ❌ n8n ist nicht erreichbar! Starte neu..."
+    cd /path/to/your/n8n-docker-setup
+    docker-compose restart
+    
+    # Optional: Benachrichtigung senden
+    # curl -X POST -H 'Content-type: application/json' \
+    #   --data '{"text":"n8n Server wurde neu gestartet!"}' \
+    #   YOUR_SLACK_WEBHOOK_URL
+else
+    echo "[$(date)] ✅ n8n läuft normal"
+fi
+```
+
+## 📁 Projektstruktur
+
+```
+n8n-docker-setup/
+├── docker-compose.yml    # Haupt-Konfiguration
+├── README.md            # Diese Anleitung
+├── .gitignore          # Git-Ausschlüsse
+├── .env.example        # Umgebungsvariablen-Vorlage
+├── scripts/
+│   ├── update-n8n.sh   # Update-Automatisierung
+│   └── monitor-n8n.sh  # Monitoring
+├── docs/
+│   ├── production.md   # Produktions-Setup
+│   └── troubleshooting.md # Fehlerbehebung
+└── n8n_data/           # Persistente Daten (nicht in Git)
+    ├── workflows/
+    ├── credentials/
+    └── database.sqlite
+```
+
+## 🛠️ Wartung
+
+### Wichtige Befehle
+
+```bash
+# Status prüfen
+docker-compose ps
+
+# Logs anzeigen
+docker-compose logs -f n8n
+
+# Container neu starten
+docker-compose restart
+
+# Vollständiger Neustart
+docker-compose down && docker-compose up -d
+
+# Backup erstellen
+tar -czf n8n-backup-$(date +%Y%m%d).tar.gz n8n_data/
+
+# Update durchführen
+docker-compose pull && docker-compose up -d
+```
+
+### Fehlerbehebung
+
+**Problem: n8n startet nicht**
+```bash
+# Logs prüfen
+docker-compose logs n8n
+
+# Berechtigungen prüfen
+sudo chown -R 1000:1000 n8n_data/
+```
+
+**Problem: Webhooks funktionieren nicht**
+- `WEBHOOK_URL` in docker-compose.yml prüfen
+- Firewall-Einstellungen überprüfen
+- Port-Weiterleitung konfigurieren
+
+## 🔒 Sicherheit
+
+- **Passwort ändern:** Standard-Zugangsdaten sofort ändern
+- **HTTPS verwenden:** Für Produktionsumgebungen zwingend
+- **Firewall:** Nur notwendige Ports öffnen
+- **Updates:** Regelmäßige Updates durchführen
+- **Backups:** Automatische Datensicherung einrichten
+
+## 📚 Zusätzliche Ressourcen
+
+- [n8n Dokumentation](https://docs.n8n.io/)
+- [Docker Compose Referenz](https://docs.docker.com/compose/)
+- [n8n Community](https://community.n8n.io/)
+- [GitHub Issues](https://github.com/n8n-io/n8n/issues)
+
+## 📄 Lizenz
+
+Dieses Setup basiert auf n8n und steht unter der [Fair-use license](https://github.com/n8n-io/n8n/blob/master/LICENSE.md).
+
+---
+
+**Hinweis:** Vergiss nicht, die Standard-Zugangsdaten zu ändern und für Produktionsumgebungen entsprechende Sicherheitsmaßnahmen zu implementieren!

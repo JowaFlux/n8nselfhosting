@@ -1,0 +1,58 @@
+# n8n Docker Setup - .gitignore
+
+# n8n Datenordner (enthält sensible Daten wie Workflows, Credentials, Datenbank)
+n8n_data/
+
+# Docker-spezifische Dateien
+.env
+.env.local
+.env.production
+
+# Backup-Dateien
+n8n_data_backup_*/
+*.tar.gz
+*.zip
+
+# Logs
+*.log
+logs/
+
+# Temporäre Dateien
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js (falls lokale Entwicklung)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SSL-Zertifikate
+*.pem
+*.key
+*.crt
+*.p12
+
+# Produktions-spezifische Konfiguration
+production.yml
+staging.yml
+
+# Monitoring und Metriken
+prometheus_data/
+grafana_data/
+
+# Scripts mit sensiblen Daten
+config.local.sh
+secrets.sh
+
+# Docker Volumes
+volumes/
+
+# Betriebssystem-spezifisch
+Thumbs.db
+ehthumbs.db
+Desktop.ini
