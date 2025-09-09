@@ -1,0 +1,18 @@
+{
+  "action": "AI-Stack Setup & Test",
+  "owner": "VS-Entwickler",
+  "started_at_utc": "<UTC>",
+  "finished_at_utc": "<UTC>",
+  "result": "success",
+  "artifacts": {
+    "evidence_path": "/data/proofs/P3-owner-auth-YYYYMMDD-HHMM.tar.gz",
+    "report": "docs/testberichte/ai-stack-n8n-ollama-YYYYMMDD.md"
+  },
+  "checks": {
+    "ollama_tags": "ok",
+    "n8n_auth_noauth_code": 401,
+    "n8n_auth_withauth_code": 200,
+    "coordinator_sanity": "ok"
+  },
+  "notes": "n8n & ollama laufen im gemeinsamen Netz; Credential in n8n auf http://ollama:11434 gesetzt."
+}
