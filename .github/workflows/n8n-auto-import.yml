@@ -1,0 +1,134 @@
+name: n8n Auto-Import
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "workflows/**/*.json"
+      - "tools/overview/auto-import.js"
+  schedule:
+    - cron: "15 1 * * *"  # ~02:15 CET/03:15 CEST
+  workflow_dispatch: {}
+
+jobs:
+  auto-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+      N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      N8N_API_KEY_LOCAL: ${{ secrets.N8N_API_KEY_LOCAL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18' }
+      - name: Install deps (optional)
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+      - name: Ensure jq is available
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+      - name: Run Auto-Import
+        run: |
+          # Set defaults for missing environment variables
+          N8N_BASE_URL="${N8N_BASE_URL:-http://localhost:5678}"
+          N8N_API_KEY="${N8N_API_KEY:-}"
+          SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}"
+          TG_BOT_TOKEN="${TG_BOT_TOKEN:-}"
+          TG_CHAT_ID="${TG_CHAT_ID:-}"
+          PROJECT_WORKFLOWS_DIR="./workflows"
+
+          export N8N_BASE_URL N8N_API_KEY PROJECT_WORKFLOWS_DIR
+
+          if [ -z "$N8N_API_KEY" ]; then
+            echo "N8N_API_KEY not configured, skipping auto-import"
+            echo '{"error": "N8N_API_KEY not configured"}' > auto_import_output.json
+          else
+            node tools/overview/auto-import.js | tee auto_import_output.json
+          fi
+      - name: Summarize
+        if: always()
+        run: |
+          echo "### n8n Auto-Import Ergebnis" >> $GITHUB_STEP_SUMMARY
+          if [ -f auto_import_output.json ]; then
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat auto_import_output.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Kein Output (Script fehlgeschlagen?)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notify Slack
+        if: always()
+        run: |
+          SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:-}"
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            PAYLOAD=$(jq -n --arg t "n8n Auto-Import abgeschlossen" \
+              --arg s "$(cat auto_import_output.json 2>/dev/null || echo 'kein Output')" \
+              '{text: ($t + "\n```" + $s + "```")}')
+            curl -X POST -H 'Content-type: application/json' \
+              --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+          else
+            echo "Slack webhook not configured, skipping notification"
+          fi
+
+      - name: Notify Telegram
+        if: always()
+        run: |
+          TG_BOT_TOKEN="${TG_BOT_TOKEN:-}"
+          TG_CHAT_ID="${TG_CHAT_ID:-}"
+          if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+            MSG="n8n Auto-Import abgeschlossen%0A$(sed 's/$/%0A/' auto_import_output.json 2>/dev/null | head -c 3800)"
+            curl -s "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage?chat_id=$TG_CHAT_ID&text=$MSG"
+          else
+            echo "Telegram credentials not configured, skipping notification"
+          fi
+
+  auto-import-local:
+    if: ${{ false }}  # auf true stellen, wenn Self-Hosted Runner benutzt wird
+    runs-on: self-hosted
+    timeout-minutes: 10
+    env:
+      N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+      N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      N8N_API_KEY_LOCAL: ${{ secrets.N8N_API_KEY_LOCAL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '18' }
+      - name: Install deps (optional)
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+      - name: Run Auto-Import Local
+        run: |
+          N8N_BASE_URL="${N8N_BASE_URL:-http://localhost:5678}"
+          N8N_API_KEY="${N8N_API_KEY:-}"
+          PROJECT_WORKFLOWS_DIR="./workflows"
+
+          export N8N_BASE_URL N8N_API_KEY PROJECT_WORKFLOWS_DIR
+
+          if [ -z "$N8N_API_KEY" ]; then
+            echo "N8N_API_KEY not configured, skipping auto-import"
+            echo '{"error": "N8N_API_KEY not configured"}' > auto_import_output.json
+          else
+            node tools/overview/auto-import.js | tee auto_import_output.json
+          fi
+      - name: Summarize
+        if: always()
+        run: |
+          echo "### n8n Auto-Import (Local Runner) Ergebnis" >> $GITHUB_STEP_SUMMARY
+          if [ -f auto_import_output.json ]; then
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat auto_import_output.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Kein Output (Script fehlgeschlagen?)" >> $GITHUB_STEP_SUMMARY
+          fi

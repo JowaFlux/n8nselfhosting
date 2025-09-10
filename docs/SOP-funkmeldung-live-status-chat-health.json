@@ -1,0 +1,15 @@
+{
+  "action": "Live-Status + Chat-Workflow + Health-Check",
+  "owner": "VS-Entwickler",
+  "result": "success",
+  "artifacts": {
+    "evidence_path": "./data/proofs/P3-chat-live-20250909-1300.tar.gz",
+    "health_script": "health_check.sh"
+  },
+  "checks": {
+    "containers": "healthy",
+    "chat_test": "ok",
+    "cron_health": "installed"
+  },
+  "ts_utc": "2025-09-09T13:00:00Z"
+}

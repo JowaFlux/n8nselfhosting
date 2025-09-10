@@ -1,0 +1,20 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - TZ=Europe/Zurich
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_SECURE_COOKIE=false  # Setze auf true bei HTTPS
+      - N8N_USER_MANAGEMENT_JWT_DURATION_HOURS=${N8N_USER_MANAGEMENT_JWT_DURATION_HOURS}
+      # - N8N_PROTOCOL=https  # Optional für HTTPS
+      # - N8N_SSL_KEY=/path/to/ssl/key.pem  # Optional
+      # - N8N_SSL_CERT=/path/to/ssl/cert.pem  # Optional
+      - OLLAMA_URL=http://host.docker.internal:11434  # Für lokale Ollama
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+volumes:
+  n8n_data:

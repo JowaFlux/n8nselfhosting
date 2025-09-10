@@ -1,0 +1,85 @@
+{
+  "name": "Proof Collector",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "proof-collector",
+        "httpMethod": "POST"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Build a minimal evidence report object from incoming body\nconst payload = $json;\nconst ts = new Date().toISOString();\nreturn [{ json: { task: payload.task || 'P1', who: payload.who || 'n8n-Agent', start: ts, status: 'collected', note: 'Template collector - run host script to finalize', evidencePath: payload.evidencePath || '/data/proofs/' } }];"
+      },
+      "name": "Build Report",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [520, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "fileId": "={{ $env.LOG_FILE_ID }}",
+        "binaryData": false,
+        "dataPropertyName": "lines",
+        "options": {}
+      },
+      "name": "Drive Append",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "responseMode": "onReceived",
+        "responseData": "={{ $json }}"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.response",
+      "typeVersion": 1,
+      "position": [1040, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report": {
+      "main": [
+        [
+          {
+            "node": "Drive Append",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive Append": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": 1
+}

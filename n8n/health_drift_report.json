@@ -1,0 +1,173 @@
+{
+  "name": "Health & Drift Report (Server-only, StaticData)",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 2,
+              "minute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 2,
+      "position": [ -600, -120 ],
+      "id": "Cron"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.baseUrl || $env.N8N_BASE_URL || \"http://localhost:5678\"}}/rest/workflows",
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Authorization",
+                "value": "={{\"Bearer \" + ($json.apiKey || $env.N8N_API_KEY || $json.N8N_API_KEY)}}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ -260, -200 ],
+      "id": "GetWorkflows",
+      "name": "GET /rest/workflows"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.baseUrl || $env.N8N_BASE_URL || \"http://localhost:5678\"}}/rest/executions-current",
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Authorization",
+                "value": "={{\"Bearer \" + ($json.apiKey || $env.N8N_API_KEY || $json.N8N_API_KEY)}}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ -260, 0 ],
+      "id": "GetExecRunning",
+      "name": "GET /rest/executions-current"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.baseUrl || $env.N8N_BASE_URL || \"http://localhost:5678\"}}/rest/executions?limit=25",
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Authorization",
+                "value": "={{\"Bearer \" + ($json.apiKey || $env.N8N_API_KEY || $json.N8N_API_KEY)}}"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ -260, 200 ],
+      "id": "GetExecRecent",
+      "name": "GET /rest/executions?limit=25"
+    },
+    {
+      "parameters": {
+        "functionCode": "const prev = this.getWorkflowStaticData('global');\n\n// Normalize helper\nfunction indexById(arr) {\n  const idx = {};\n  for (const w of arr) idx[w.id] = {\n    id: w.id,\n    name: w.name,\n    active: !!w.active,\n    updatedAt: w.updatedAt || w.updatedAtUNIX || null,\n    versionId: w.versionId || null\n  };\n  return idx;\n}\n\n// Read inputs\nconst wfRaw = items[0].json; // from GET /rest/workflows\nconst list = (wfRaw.data || wfRaw || []);\nconst runningRaw = items[1].json; // executions-current\nconst recentRaw = items[2].json;  // executions?limit=25\n\nconst now = new Date().toISOString();\nconst current = list.map(w => ({\n  id: w.id,\n  name: w.name,\n  active: !!w.active,\n  updatedAt: w.updatedAt || w.updatedAtUNIX || null,\n  versionId: w.versionId || null\n}));\n\nconst prevList = prev.snapshot || [];\nconst idxPrev = indexById(prevList);\nconst idxCurr = indexById(current);\n\n// Diff\nconst added = [];\nconst removed = [];\nconst updated = [];\n\nfor (const id of Object.keys(idxCurr)) {\n  if (!idxPrev[id]) {\n    added.push(idxCurr[id]);\n  } else {\n    const a = idxPrev[id];\n    const b = idxCurr[id];\n    if (a.updatedAt !== b.updatedAt || a.active !== b.active || a.versionId !== b.versionId || a.name !== b.name) {\n      updated.push({ before: a, after: b });\n    }\n  }\n}\nfor (const id of Object.keys(idxPrev)) {\n  if (!idxCurr[id]) removed.push(idxPrev[id]);\n}\n\nconst report = {\n  generatedAt: now,\n  baseUrl: $json.baseUrl || $env.N8N_BASE_URL || 'http://localhost:5678',\n  summary: {\n    total: current.length,\n    running: (runningRaw.data || runningRaw || []).length || 0,\n    recent: (recentRaw.data || recentRaw || []).length || 0,\n    added: added.length,\n    removed: removed.length,\n    updated: updated.length\n  },\n  drift: { added, removed, updated },\n  note: 'Persistenz via Workflow Static Data; erster Lauf markiert alles als added.'\n};\n\n// Persist current as new snapshot\nprev.snapshot = current;\nprev.lastRun = now;\n\nreturn [{ json: report }];"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [ 60, 0 ],
+      "id": "BuildReport",
+      "name": "Build Report & Persist"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.SLACK_WEBHOOK_URL || $json.SLACK_WEBHOOK_URL}}",
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "body": "={\n  \"text\": \"n8n Health & Drift\\n\" +\n  \"total:\" + $json.summary.total + \", running:\" + $json.summary.running + \", recent:\" + $json.summary.recent + \"\\n\" +\n  \"added:\" + $json.summary.added + \", removed:\" + $json.summary.removed + \", updated:\" + $json.summary.updated\n}",
+          "sendBinaryData": false
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ 360, -100 ],
+      "id": "SlackNotify",
+      "name": "Notify Slack",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "={{\"https://api.telegram.org/bot\" + ($env.TG_BOT_TOKEN || $json.TG_BOT_TOKEN) + \"/sendMessage\"}}",
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "chat_id",
+              "value": "={{$env.TG_CHAT_ID || $json.TG_CHAT_ID}}"
+            },
+            {
+              "name": "text",
+              "value": "={{\"n8n Health & Drift%0A\" + encodeURI(\"total:\" + $json.summary.total + \", running:\" + $json.summary.running + \", recent:\" + $json.summary.recent + \" | added:\" + $json.summary.added + \", removed:\" + $json.summary.removed + \", updated:\" + $json.summary.updated))}}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [ 360, 100 ],
+      "id": "TelegramNotify",
+      "name": "Notify Telegram",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [ -600, 80 ],
+      "id": "Manual"
+    }
+  ],
+  "connections": {
+    "Cron": { "main": [ [ { "node": "GET /rest/workflows", "type": "main", "index": 0 } ] ] },
+    "Manual": { "main": [ [ { "node": "GET /rest/workflows", "type": "main", "index": 0 } ] ] },
+    "GET /rest/workflows": { "main": [ [ { "node": "GET /rest/executions-current", "type": "main", "index": 0 } ] ] },
+    "GET /rest/executions-current": { "main": [ [ { "node": "GET /rest/executions?limit=25", "type": "main", "index": 0 } ] ] },
+    "GET /rest/executions?limit=25": { "main": [ [ { "node": "Build Report & Persist", "type": "main", "index": 0 } ] ] },
+    "Build Report & Persist": {
+      "main": [
+        [ { "node": "Notify Slack", "type": "main", "index": 0 } ],
+        [ { "node": "Notify Telegram", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "settings": { "saveExecutionProgress": false, "timezone": "Europe/Zurich" },
+  "staticData": {},
+  "meta": { "templateCredsSetup": "Create HTTP Request credential with Bearer token for n8n API if preferred; or use env N8N_API_KEY" }
+}

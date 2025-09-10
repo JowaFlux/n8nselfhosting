@@ -1,0 +1,3 @@
+NAME      IMAGE                  COMMAND                  SERVICE   CREATED         STATUS                    PORTS
+n8n       n8nio/n8n:latest       "tini -- /docker-ent…"   n8n       20 minutes ago   Up 20 minutes (healthy)   0.0.0.0:5678->5678/tcp
+ollama    ollama/ollama:latest   "/bin/ollama serve"      ollama    20 minutes ago   Up 20 minutes (healthy)   0.0.0.0:11434->11434/tcp

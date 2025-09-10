@@ -1,0 +1,11 @@
+{
+  "action": "n8n UI Hardening + YAML Fix",
+  "owner": "Koordinator",
+  "result": "success",
+  "artifacts": {
+    "compose": "docker-compose.yml",
+    "notes": "UI via Traefik Basic-Auth gesichert; API/Webhooks via n8n Basic-Auth"
+  },
+  "checks": { "compose_config": "OK", "services": "healthy" },
+  "ts_utc": "2025-09-09T12:30:00Z"
+}

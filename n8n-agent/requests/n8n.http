@@ -1,0 +1,15 @@
+### Minimal Agent
+POST http://localhost:5678/webhook/agent/run
+Content-Type: application/json
+
+{
+  "task": "Erstelle einen Agenten-Plan für RAG + Bewertungsloop (≥950)."
+}
+
+### Loop Agent (RAG)
+POST http://localhost:5678/webhook/agent/run-950
+Content-Type: application/json
+
+{
+  "task": "Plane die Agentenstruktur für mein Content-System. Liefere JSON und erreiche ≥950/1000."
+}

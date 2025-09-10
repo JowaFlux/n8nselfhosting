@@ -1,0 +1,24 @@
+{
+  "job": "Add n8n Health & Drift workflow (no GitHub dependency) with daily cron and optional notifications",
+  "context": { "stack": ["n8n", "node18+", "vscode"], "host": "local" },
+  "deliverables": [
+    "n8n/health_drift_report.json",
+    "docs/health_drift_report_README.md"
+  ],
+  "acceptance_criteria": [
+    "Workflow importierbar, manuell ausführbar, Cron standardmäßig 02:30",
+    "Report enthält counts: added, removed, updated, total",
+    "Vorheriger Snapshot wird in Workflow Static Data persistiert",
+    "Optional-Notify (Slack/Telegram) schickt Kurzbericht bei gesetzten Secrets"
+  ],
+  "tests": [
+    "Erstlauf (keine Vor-Daten) → Report mit total Workflows, added=total",
+    "Änderung an einem Workflow → updated=1 im Folgelauf",
+    "Löschen/Hinzufügen → removed/added korrekt",
+    "Slack/Telegram Step sendet Nachricht (falls Secrets gesetzt)"
+  ],
+  "rollback": [
+    "Workflow in n8n deaktivieren oder löschen (keine Systemänderungen)",
+    "Keine persistenten Files außerhalb Static Data"
+  ]
+}

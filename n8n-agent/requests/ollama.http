@@ -1,0 +1,9 @@
+### Chat OK
+POST http://localhost:11434/api/chat
+Content-Type: application/json
+
+{
+  "model": "{{CHAT_MODEL}}",
+  "messages": [{"role":"user","content":"Sag nur: OK"}],
+  "stream": false
+}

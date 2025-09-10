@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-mac}" == "linux" ]]; then
+  docker compose -f docker-compose.linux.yml up -d
+else
+  docker compose -f docker-compose.mac.yml up -d
+fi

@@ -1,0 +1,38 @@
+{
+  "name": "Indexer (Drive/Sheets → Embeddings → SQLite)",
+  "nodes": [
+    {"parameters": {"mode": "manual"}, "id": "Manual", "name": "Manual", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [120,100]},
+    {"parameters": {"operation": "list", "filters": {"q": "'{{$env.GDRIVE_FOLDER_ID}}' in parents and trashed=false"}}, "id": "DriveList", "name": "Google Drive List", "type": "n8n-nodes-base.googleDrive", "typeVersion": 3, "position": [320,100], "credentials": {"googleDriveOAuth2Api": {"id": "DRIVE_READONLY"}}},
+    {"parameters": {"functionCode": "const ids = items.map(i => i.json.id || i.json.file?.id).filter(Boolean);\nconst idsSql = ids.map(id => `'${id.replace(/'/g, \"''\")}'`).join(',');\nreturn [{ json: { ids, ids_sql: idsSql, count: ids.length } }];"}, "id": "CollectCurrentIDs", "name": "CollectCurrentIDs", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [520,100]},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$env.DATA_RETENTION}}", "operation": "equals", "value2": "current_only"}, {"value1": "={{$env.ALLOW_DATA_PRUNE}}", "operation": "equals", "value2": "true"}]}}, "id": "CheckPrune", "name": "Check Prune", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [720,100]},
+    {"parameters": {"operation": "executeQuery", "query": "BEGIN;\nDELETE FROM chunks    WHERE doc_id NOT IN ({{$json[\"ids_sql\"]}});\nDELETE FROM documents WHERE id     NOT IN ({{$json[\"ids_sql\"]}});\nCOMMIT;"}, "id": "PruneStale", "name": "PruneStale", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [920,60], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$env.PRUNE_VACUUM}}", "operation": "equals", "value2": "true"}]}}, "id": "CheckVacuum", "name": "Check Vacuum", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [1120,60]},
+    {"parameters": {"operation": "executeQuery", "query": "VACUUM;"}, "id": "Vacuum", "name": "Vacuum", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [1320,60], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"operation": "download", "fileId": "={{$json.id}}"}, "id": "DriveDownload", "name": "Google Drive Download", "type": "n8n-nodes-base.googleDrive", "typeVersion": 3, "position": [720,180], "credentials": {"googleDriveOAuth2Api": {"id": "DRIVE_READONLY"}}},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$json.mimeType}}", "operation": "equals", "value2": "application/vnd.google-apps.document"}]}}, "id": "IsGoogleDoc", "name": "Is Google Doc", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [920,180]},
+    {"parameters": {"operation": "download", "fileId": "={{$json.id}}", "options": {"mimeType": "text/plain"}}, "id": "DriveDownloadText", "name": "Google Drive Download Text", "type": "n8n-nodes-base.googleDrive", "typeVersion": 3, "position": [1120,140], "credentials": {"googleDriveOAuth2Api": {"id": "DRIVE_READONLY"}}},
+    {"parameters": {"requestMethod": "PUT", "url": "${TIKA_URL}/tika", "sendBinaryData": true, "binaryProperty": "data", "responseFormat": "string"}, "id": "TikaExtract", "name": "Tika Extract", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1120,220]},
+    {"parameters": {"functionCode": "const text = $json.text || $json.body || '';\nreturn [{json: {doc_id: $json.id, name: $json.name, mime: $json.mimeType, text}}];"}, "id": "PrepareDoc", "name": "Prepare Doc", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [1320,180]},
+    {"parameters": {"functionCode": "const itemsOut=[];\nconst item = items[0].json;\nconst text = item.text || '';\nconst size=1000, overlap=200;\nfor (let i=0;i<text.length;i+= (size-overlap)) {\n  itemsOut.push({json:{doc_id:item.doc_id, chunk_index: itemsOut.length, text: text.slice(i,i+size)}});\n}\nreturn itemsOut;"}, "id": "Chunk", "name": "Chunking", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [1520,180]},
+    {"parameters": {"requestMethod": "POST", "url": "http://host.docker.internal:11434/api/embeddings", "jsonParameters": true, "options": {"timeout": 120000}, "bodyParametersJson": "={\n  \"model\": \"${EMBED_MODEL}\",\n  \"prompt\": $json.text\n}"}, "id": "Embed", "name": "Ollama Embeddings", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1720,180]},
+    {"parameters": {"operation": "executeQuery", "query": "CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, name TEXT, source TEXT, mime TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);\nCREATE TABLE IF NOT EXISTS chunks (id TEXT PRIMARY KEY, doc_id TEXT, chunk_index INTEGER, text TEXT, embedding TEXT, FOREIGN KEY(doc_id) REFERENCES documents(id));\n"}, "id": "Schema", "name": "SQLite Schema", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [1520,280], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"operation": "executeQuery", "query": "INSERT OR REPLACE INTO documents(id,name,source,mime) VALUES(:doc_id,:name,:source,:mime);\nINSERT OR REPLACE INTO chunks(id,doc_id,chunk_index,text,embedding) VALUES(:chunk_id,:doc_id,:chunk_index,:text,:embedding);"}, "id": "Insert", "name": "SQLite Insert", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [1920,180], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}}
+  ],
+  "connections": {
+    "Manual": {"main": [[{"node": "DriveList", "type": "main", "index": 0}]]},
+    "DriveList": {"main": [[{"node": "CollectCurrentIDs", "type": "main", "index": 0}]]},
+    "CollectCurrentIDs": {"main": [[{"node": "CheckPrune", "type": "main", "index": 0}]]},
+    "CheckPrune": {"main": [[{"node": "PruneStale", "type": "main", "index": 0}], [{"node": "CheckVacuum", "type": "main", "index": 0}]]},
+    "PruneStale": {"main": [[{"node": "CheckVacuum", "type": "main", "index": 0}]]},
+    "CheckVacuum": {"main": [[{"node": "Vacuum", "type": "main", "index": 0}], [{"node": "DriveDownload", "type": "main", "index": 0}]]},
+    "Vacuum": {"main": [[{"node": "DriveDownload", "type": "main", "index": 0}]]},
+    "DriveDownload": {"main": [[{"node": "IsGoogleDoc", "type": "main", "index": 0}]]},
+    "IsGoogleDoc": {"main": [[{"node": "DriveDownloadText", "type": "main", "index": 0}], [{"node": "TikaExtract", "type": "main", "index": 0}]]},
+    "DriveDownloadText": {"main": [[{"node": "PrepareDoc", "type": "main", "index": 0}]]},
+    "TikaExtract": {"main": [[{"node": "PrepareDoc", "type": "main", "index": 0}]]},
+    "PrepareDoc": {"main": [[{"node": "Chunk", "type": "main", "index": 0}]]},
+    "Chunk": {"main": [[{"node": "Embed", "type": "main", "index": 0}]]},
+    "Embed": {"main": [[{"node": "Insert", "type": "main", "index": 0}]]}
+  },
+  "active": false
+}

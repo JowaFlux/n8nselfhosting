@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["run_id", "notion_page_id", "notion_url"],
+  "properties": {
+    "run_id": { "type": "string" },
+    "notion_page_id": { "type": "string" },
+    "notion_url": { "type": "string" }
+  }
+}

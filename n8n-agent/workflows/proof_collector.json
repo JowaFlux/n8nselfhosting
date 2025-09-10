@@ -1,0 +1,29 @@
+{
+  "name": "PROOF_COLLECTOR",
+  "nodes": [
+    {"parameters": {"path": "proof/collect", "options": {"responseData": "JSON"}}, "id": "Webhook", "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "position": [120,120]},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$json.event}}", "operation": "equals", "value2": "start_run"}]}}, "id": "IsStartRun", "name": "Is Start Run", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [320,120]},
+    {"parameters": {"operation": "executeQuery", "query": "INSERT INTO runs(run_id, started_at, status) VALUES(:run_id, datetime('now'), 'running');"}, "id": "StartRun", "name": "Start Run", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [520,60], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$json.event}}", "operation": "equals", "value2": "finish_run"}]}}, "id": "IsFinishRun", "name": "Is Finish Run", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [320,180]},
+    {"parameters": {"functionCode": "const data = $json.data;\nconst completion = data.completion || 0;\nconst correctness = data.correctness || 0;\nconst performance = data.performance || 0;\nconst robustness = data.robustness || 0;\nconst docs = data.docs || 0;\nconst score = Math.round(40 * completion + 25 * correctness + 15 * performance + 10 * robustness + 10 * docs);\nconst summary = `Completion=${completion}, Correctness=${correctness}, Performance=${performance}, Robustness=${robustness}, Docs=${docs}`;\nreturn [{json: {score, summary}}];"}, "id": "CalculateScore", "name": "Calculate Score", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [520,180]},
+    {"parameters": {"operation": "executeQuery", "query": "UPDATE runs SET finished_at=datetime('now'), status=:status, score=:score, summary=:summary WHERE run_id=:run_id;"}, "id": "FinishRun", "name": "Finish Run", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [720,180], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$json.event}}", "operation": "equals", "value2": "step"}]}}, "id": "IsStep", "name": "Is Step", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [320,240]},
+    {"parameters": {"operation": "executeQuery", "query": "INSERT OR REPLACE INTO steps(step_id, run_id, name, status, started_at, finished_at, duration_ms, retries, message) VALUES(:step_id, :run_id, :name, :status, datetime('now', '-' || :duration_ms || ' milliseconds'), datetime('now'), :duration_ms, :retries, :message);"}, "id": "LogStep", "name": "Log Step", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [520,240], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"conditions": {"string": [{"value1": "={{$json.event}}", "operation": "equals", "value2": "artifact"}]}}, "id": "IsArtifact", "name": "Is Artifact", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [320,300]},
+    {"parameters": {"operation": "executeQuery", "query": "INSERT INTO artifacts(artifact_id, run_id, step_id, path, mime, size_bytes, checksum) VALUES(:artifact_id, :run_id, :step_id, :path, :mime, :size_bytes, :checksum);"}, "id": "LogArtifact", "name": "Log Artifact", "type": "n8n-nodes-base.sqlite", "typeVersion": 1, "position": [520,300], "credentials": {"sqlite": {"database":"/data/knowledge.sqlite"}}},
+    {"parameters": {"responseBody": "={{$json}}", "responseCode": 200}, "id": "Respond", "name": "Respond", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1, "position": [920,120]}
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "IsStartRun", "type": "main", "index": 0}], [{"node": "IsFinishRun", "type": "main", "index": 0}], [{"node": "IsStep", "type": "main", "index": 0}], [{"node": "IsArtifact", "type": "main", "index": 0}]]},
+    "IsStartRun": {"main": [[{"node": "StartRun", "type": "main", "index": 0}]]},
+    "StartRun": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]},
+    "IsFinishRun": {"main": [[{"node": "CalculateScore", "type": "main", "index": 0}]]},
+    "CalculateScore": {"main": [[{"node": "FinishRun", "type": "main", "index": 0}]]},
+    "FinishRun": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]},
+    "IsStep": {"main": [[{"node": "LogStep", "type": "main", "index": 0}]]},
+    "LogStep": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]},
+    "IsArtifact": {"main": [[{"node": "LogArtifact", "type": "main", "index": 0}]]},
+    "LogArtifact": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]}
+  },
+  "active": false
+}

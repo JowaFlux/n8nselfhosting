@@ -1,0 +1,16 @@
+# docker compose ps
+n8n         running
+traefik     running
+postgres    running
+
+# docker compose logs --since=30m traefik (gekürzt)
+2025-09-04T14:00:00+02:00 [INFO] ... Dashboard request from allowed IP
+2025-09-04T14:00:01+02:00 [INFO] ... TLS handshake successful
+
+# docker compose logs --since=30m n8n (gekürzt)
+2025-09-04T14:00:01+02:00 [INFO] [CEO-Agent] Trigger ingest demo-001
+2025-09-04T14:00:02+02:00 [INFO] [Whisper] Transcription started
+2025-09-04T14:00:10+02:00 [INFO] [Whisper] Transcription finished
+2025-09-04T14:00:11+02:00 [INFO] [Clipping] Markers generated
+2025-09-04T14:00:13+02:00 [INFO] [Content] Content generated
+2025-09-04T14:00:15+02:00 [INFO] [Notion] Page created: https://notion.so/xxxxxx

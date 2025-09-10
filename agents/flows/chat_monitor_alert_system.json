@@ -1,0 +1,97 @@
+{
+  "name": "Chat Monitor Alert System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Alert Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst timestamp = new Date().toISOString();\nconst isFail = !body.success || !body.response || body.response.trim().length === 0;\n\nreturn [{ json: {\n  timestamp,\n  status: isFail ? 'FAIL' : 'OK',\n  message: body.message || 'Chat Monitor Alert',\n  response: body.response || 'No response',\n  evidence_path: `./monitoring/sanity_report_${new Date().toISOString().slice(0,16).replace('T','-')}.txt`,\n  reason: isFail ? 'Chat response failed or empty' : null,\n  alert_level: isFail ? 'warning' : 'info'\n} }];"
+      },
+      "id": "process",
+      "name": "Process Alert Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "method": "POST",
+        "jsonParameters": true,
+        "bodyParametersJson": "{\"text\":\"🚨 Chat Monitor Alert\",\"attachments\":[{\"color\":\"{{$json.alert_level === 'warning' ? '#ff0000' : '#00ff00'}}\",\"fields\":[{\"title\":\"Status\",\"value\":\"{{$json.status}}\",\"short\":true},{\"title\":\"Timestamp\",\"value\":\"{{$json.timestamp}}\",\"short\":true},{\"title\":\"Message\",\"value\":\"{{$json.message}}\",\"short\":false},{\"title\":\"Response\",\"value\":\"{{$json.response}}\",\"short\":false},{\"title\":\"Evidence\",\"value\":\"{{$json.evidence_path}}\",\"short\":false}]}]}",
+        "options": {
+          "timeout": 10000,
+          "retryOnFail": true,
+          "maxRetries": 2
+        }
+      },
+      "id": "slack",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "respond",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Alert Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Alert Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Alert Data": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Alert": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  }
+}

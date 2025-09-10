@@ -1,0 +1,20 @@
+{
+  "job": "Ensure n8n Variant A stays wizard-free with long sessions and safe credential handling",
+  "deliverables": [
+    "docker/compose.n8n.yml",
+    ".env.n8n",
+    "ops/scripts/preflight_check.sh",
+    "docs/autologin_guardrails.md"
+  ],
+  "acceptance_criteria": [
+    "Volume /home/node/.n8n gemountet, Owner bleibt erhalten",
+    "JWT >= 720h, SECURE_COOKIE lokal=false",
+    "Preflight meldet: Port frei, Volume vorhanden, Session-Cookies aktiv",
+    "Nach Restart: http://localhost:5678/home/workflows ohne Setup"
+  ],
+  "steps": [
+    "Verify Docker volume mount and port 5678 availability",
+    "Set N8N_USER_MANAGEMENT_JWT_DURATION_HOURS and N8N_SECURE_COOKIE",
+    "Restart container and curl /rest/workflows (HTTP 200 expected)"
+  ]
+}

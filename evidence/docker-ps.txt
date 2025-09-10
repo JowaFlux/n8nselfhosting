@@ -1,0 +1,7 @@
+NAMES             IMAGE                                  STATUS                       PORTS
+watchtower        containrrr/watchtower                  Up 39 minutes (healthy)      8080/tcp
+boring_colden     n8nio/n8n:latest                       Up 57 minutes                5678/tcp
+n8n               n8nio/n8n                              Up 57 minutes                0.0.0.0:5678->5678/tcp
+sim-simstudio-1   ghcr.io/simstudioai/simstudio:latest   Up About an hour (healthy)   0.0.0.0:3000->3000/tcp
+sim-realtime-1    ghcr.io/simstudioai/realtime:latest    Up About an hour (healthy)   0.0.0.0:3002->3002/tcp
+sim-db-1          pgvector/pgvector:pg17                 Up About an hour (healthy)   0.0.0.0:5432->5432/tcp

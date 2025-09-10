@@ -1,0 +1,17 @@
+@base=http://localhost:5678
+@key={{N8N_API_KEY}}
+
+### Workflows (Server)
+GET {{base}}/rest/workflows
+Authorization: Bearer {{key}}
+Content-Type: application/json
+
+### Aktuell laufende Executions
+GET {{base}}/rest/executions-current
+Authorization: Bearer {{key}}
+Content-Type: application/json
+
+### Letzte Executions (25)
+GET {{base}}/rest/executions?limit=25
+Authorization: Bearer {{key}}
+Content-Type: application/json

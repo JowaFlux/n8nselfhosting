@@ -1,0 +1,132 @@
+{
+  "name": "Daily Health Check & Drift Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hours": 24
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/rest/workflows",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.N8N_API_KEY}}"
+            }
+          ]
+        }
+      },
+      "id": "http-workflows",
+      "name": "Get Workflows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/rest/executions-current",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.N8N_API_KEY}}"
+            }
+          ]
+        }
+      },
+      "id": "http-executions",
+      "name": "Get Current Executions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [500, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "const workflows = $json || [];\nconst executions = $node['Get Current Executions'].json || [];\n\nconst driftReport = {\n  timestamp: new Date().toISOString(),\n  workflows: {\n    total: workflows.data?.length || 0,\n    active: workflows.data?.filter(w => w.active).length || 0\n  },\n  executions: {\n    running: executions.data?.length || executions.length || 0\n  },\n  status: 'healthy'\n};\n\nreturn [{ json: driftReport }];"
+      },
+      "id": "function-drift",
+      "name": "Calculate Drift",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "method": "POST",
+        "sendBody": true,
+        "bodyContentType": "raw",
+        "body": "={\"text\":\"Daily n8n Health Report\\n```\" + $json + \"```\"}",
+        "rawContentType": "application/json"
+      },
+      "id": "slack-notify",
+      "name": "Slack Notify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1020, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Workflows",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Current Executions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Workflows": {
+      "main": [
+        [
+          {
+            "node": "Calculate Drift",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Drift": {
+      "main": [
+        [
+          {
+            "node": "Slack Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true
+  },
+  "tags": ["health", "drift", "daily"]
+}

@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant Client as Client (POST /agents/ingest)
+  participant CEO as CEO-Agent (n8n)
+  participant WH as Whisper
+  participant CL as Clipping
+  participant CG as Content
+  participant NO as Notion
+
+  Client->>CEO: ingest (run_id=demo-001)
+  CEO->>WH: transcribe(video_url)
+  WH-->>CEO: transcript_text, language, duration
+  CEO->>CL: analyze(transcript_text)
+  CL-->>CEO: markers[]
+  CEO->>CG: ideate(transcript_text, markers)
+  CG-->>CEO: titles[], hooks[], descriptions[], hashtags[]
+  CEO->>NO: write(page payload)
+  NO-->>CEO: notion_page_id, notion_url
+  CEO-->>Client: 200 OK (summary)

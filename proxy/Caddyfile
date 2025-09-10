@@ -1,0 +1,20 @@
+:8080 {
+    encode zstd gzip
+
+    # Alles hinter Basic-Auth
+    basic_auth {
+        admin $2a$10$poqKYQTcB1npopCkYd6oJuu8o9LjX0Az78kbq.8AfZnx64RNIfuEi
+    }
+
+    reverse_proxy http://172.21.0.2:5678 {
+        header_up Host {host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Security Headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

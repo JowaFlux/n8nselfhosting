@@ -1,0 +1,11 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: caddy-n8n-proxy
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../.env.caddy
+    volumes:
+      - ../proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped

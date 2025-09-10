@@ -1,0 +1,5 @@
+{
+  "run_id": "demo-001",
+  "source": { "video_url": "https://example.com/demo.mp4" },
+  "options": { "do_transcribe": true, "do_clipping": true, "do_content": true, "write_notion": true, "language": "de" }
+}

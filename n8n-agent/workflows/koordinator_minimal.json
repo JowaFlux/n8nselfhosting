@@ -1,0 +1,33 @@
+{
+  "name": "Koordinator Minimal (Webhook→Ollama)",
+  "nodes": [
+    {"parameters": {"path": "agent/run", "options": {"responseData": "JSON"}}, "id": "Webhook", "name": "Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 1, "position": [200,300]},
+    {"parameters": {"functionCode": "const run_id = crypto.randomUUID();\nreturn [{json: {run_id}}];"}, "id": "GenerateRunId", "name": "Generate Run ID", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [400,300]},
+    {"parameters": {"requestMethod": "POST", "url": "http://localhost:5678/webhook/proof/collect", "jsonParameters": true, "bodyParametersJson": "={\n  \"event\": \"start_run\",\n  \"run_id\": $json.run_id,\n  \"data\": {}\n}"}, "id": "StartRun", "name": "Start Run", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [600,240]},
+    {"parameters": {"functionCode": "return [{json: {_t0: Date.now()}}];"}, "id": "StartTimer", "name": "Start Timer", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [800,300]},
+    {"parameters": {"requestMethod": "POST", "url": "http://host.docker.internal:11434/api/chat", "jsonParameters": true, "options": {"timeout": 120000}, "bodyParametersJson": "={\n  \"model\": \"${CHAT_MODEL}\",\n  \"stream\": false,\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"Antworte immer als JSON mit Feldern plan, score, feedback, nächste_schritte\"},\n    {\"role\": \"user\", \"content\": $json.task}\n  ]\n}"}, "id": "HTTP Request", "name": "HTTP Request", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1000,300]},
+    {"parameters": {"functionCode": "const duration_ms = Date.now() - $json._t0;\nconst step_id = crypto.randomUUID();\nreturn [{json: {step_id, duration_ms, status: 'success', retries: 0, message: 'Chat completed'}}];"}, "id": "LogStep", "name": "Log Step", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [1200,300]},
+    {"parameters": {"requestMethod": "POST", "url": "http://localhost:5678/webhook/proof/collect", "jsonParameters": true, "bodyParametersJson": "={\n  \"event\": \"step\",\n  \"run_id\": $json.run_id,\n  \"data\": {\n    \"step_id\": $json.step_id,\n    \"name\": \"Chat\",\n    \"status\": $json.status,\n    \"duration_ms\": $json.duration_ms,\n    \"retries\": $json.retries,\n    \"message\": $json.message\n  }\n}"}, "id": "SendStep", "name": "Send Step", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1400,300]},
+    {"parameters": {"fileName": "={{$json.run_id}}/chat_response.json", "fileContent": "={{JSON.stringify($json, null, 2)}}", "options": {"fileName": "/data/evidence"}}, "id": "SaveArtifact", "name": "Save Artifact", "type": "n8n-nodes-base.writeBinaryFile", "typeVersion": 1, "position": [1600,300]},
+    {"parameters": {"functionCode": "const artifact_id = crypto.randomUUID();\nconst path = `/data/evidence/${$json.run_id}/chat_response.json`;\nconst size_bytes = Buffer.byteLength(JSON.stringify($json), 'utf8');\nreturn [{json: {artifact_id, path, size_bytes}}];"}, "id": "PrepareArtifact", "name": "Prepare Artifact", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [1800,300]},
+    {"parameters": {"requestMethod": "POST", "url": "http://localhost:5678/webhook/proof/collect", "jsonParameters": true, "bodyParametersJson": "={\n  \"event\": \"artifact\",\n  \"run_id\": $json.run_id,\n  \"data\": {\n    \"artifact_id\": $json.artifact_id,\n    \"step_id\": $json.step_id,\n    \"path\": $json.path,\n    \"mime\": \"application/json\",\n    \"size_bytes\": $json.size_bytes,\n    \"checksum\": \"\"\n  }\n}"}, "id": "SendArtifact", "name": "Send Artifact", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [2000,300]},
+    {"parameters": {"functionCode": "const score = $json.score || 50;\nconst status = score >= 60 ? 'success' : 'partial';\nconst completion = 1;\nconst correctness = $json.plan && $json.feedback ? 1 : 0.5;\nconst performance = $json.duration_ms < 30000 ? 1 : 0.5;\nconst robustness = 1;\nconst docs = 1;\nreturn [{json: {status, score, completion, correctness, performance, robustness, docs}}];"}, "id": "PrepareFinish", "name": "Prepare Finish", "type": "n8n-nodes-base.function", "typeVersion": 2, "position": [2200,300]},
+    {"parameters": {"requestMethod": "POST", "url": "http://localhost:5678/webhook/proof/collect", "jsonParameters": true, "bodyParametersJson": "={\n  \"event\": \"finish_run\",\n  \"run_id\": $json.run_id,\n  \"data\": {\n    \"status\": $json.status,\n    \"score\": $json.score,\n    \"completion\": $json.completion,\n    \"correctness\": $json.correctness,\n    \"performance\": $json.performance,\n    \"robustness\": $json.robustness,\n    \"docs\": $json.docs\n  }\n}"}, "id": "FinishRun", "name": "Finish Run", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [2400,300]},
+    {"parameters": {"responseBody": "={{$json}}", "responseCode": 200}, "id": "Respond", "name": "Respond", "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1, "position": [2600,300]}
+  ],
+  "connections": {
+    "Webhook": {"main": [[{"node": "GenerateRunId", "type": "main", "index": 0}]]},
+    "GenerateRunId": {"main": [[{"node": "StartRun", "type": "main", "index": 0}]]},
+    "StartRun": {"main": [[{"node": "StartTimer", "type": "main", "index": 0}]]},
+    "StartTimer": {"main": [[{"node": "HTTP Request", "type": "main", "index": 0}]]},
+    "HTTP Request": {"main": [[{"node": "LogStep", "type": "main", "index": 0}]]},
+    "LogStep": {"main": [[{"node": "SendStep", "type": "main", "index": 0}]]},
+    "SendStep": {"main": [[{"node": "SaveArtifact", "type": "main", "index": 0}]]},
+    "SaveArtifact": {"main": [[{"node": "PrepareArtifact", "type": "main", "index": 0}]]},
+    "PrepareArtifact": {"main": [[{"node": "SendArtifact", "type": "main", "index": 0}]]},
+    "SendArtifact": {"main": [[{"node": "PrepareFinish", "type": "main", "index": 0}]]},
+    "PrepareFinish": {"main": [[{"node": "FinishRun", "type": "main", "index": 0}]]},
+    "FinishRun": {"main": [[{"node": "Respond", "type": "main", "index": 0}]]}
+  },
+  "active": false
+}

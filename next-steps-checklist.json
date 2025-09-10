@@ -1,0 +1,22 @@
+{
+  "next_steps": [
+    "Encryption-Key erneut rotieren und nur in .env.n8n/Secrets halten",
+    "Slack/Telegram-Notify in CI aktivieren (Secrets setzen)",
+    "n8n-Health-Workflow mit täglichem Drift-Report bauen",
+    "Backup-Cron für /home/node/.n8n einrichten",
+    "Optional: HTTPS + N8N_SECURE_COOKIE=true für Remote",
+    "Optional: Self-hosted Runner aktivieren, wenn n8n lokal bleibt"
+  ],
+  "secrets_required": [
+    "N8N_API_KEY (CI/Tools)",
+    "N8N_BASE_URL (CI remote)",
+    "SLACK_WEBHOOK_URL (optional)",
+    "TG_BOT_TOKEN (optional)",
+    "TG_CHAT_ID (optional)"
+  ],
+  "owner_actions": [
+    "API-Key setzen",
+    "Slack/Telegram Secrets hinterlegen",
+    "Compose mit neuem Key neu starten"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "Koordinator-Chat Hotfix (HTTP → Ollama → Respond)",
+  "nodes": [
+    {
+      "parameters": { "path": "chat", "responseMode": "lastNode" },
+      "id": "chat",
+      "name": "When chat message received",
+      "type": "n8n-nodes-base.chatTrigger",
+      "typeVersion": 1,
+      "position": [-600, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "method": "POST",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ { model: 'llama3.2', prompt: $json.chatInput || $json.message || 'Sag kurz: pong', stream: false } }}",
+        "options": { "timeout": 120000, "retryOnFail": true, "maxRetries": 3 }
+      },
+      "id": "http",
+      "name": "HTTP → Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-330, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "function deepFindText(x){const seen=new WeakSet(),out=[];(function walk(v){if(v&&typeof v==='object'){if(seen.has(v))return;seen.add(v);if(typeof v.response==='string'&&v.response.trim())out.push(v.response);if(typeof v.text==='string'&&v.text.trim())out.push(v.text);if(typeof v.message==='string'&&v.message.trim())out.push(v.message);if(typeof v.content==='string'&&v.content.trim())out.push(v.content);if(Array.isArray(v.choices)&&v.choices[0]){const m=v.choices[0].message||v.choices[0].text||v.choices[0].content;if(typeof m==='string'&&m.trim())out.push(m);}for(const k in v)walk(v[k]);}else if(typeof v==='string'){const s=v.trim();if(s.length>=3&&!/^([\\{\\[]|https?:\\/\\/)/i.test(s))out.push(s);}})(x);const uniq=[...new Set(out)];uniq.sort((a,b)=>(/\\.\\s*$/.test(b)?1:0)-(/\\.\\s*$/.test(a)?1:0)||b.length-a.length);return uniq[0]||'';} const text=deepFindText($json||{}); return [{ json: { response: text || '✅ Lauf ok, aber kein lesbarer Modelltext.' } }];"
+      },
+      "id": "map",
+      "name": "Map Response v2",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [-60, 0]
+    }
+  ],
+  "connections": {
+    "When chat message received": { "main": [[{ "node": "HTTP → Ollama", "type": "main", "index": 0 }]] },
+    "HTTP → Ollama": { "main": [[{ "node": "Map Response v2", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "saveDataSuccessExecution": "all", "saveDataErrorExecution": "all" }
+}

@@ -1,0 +1,20 @@
+{
+  // Silence wrong SQL diagnostics by treating SQLite schema as SQLite (or plaintext if no SQLite ext is installed)
+  "files.associations": {
+    "*.sqlite.sql": "sqlite",
+    "n8n-agent/scripts/schema.sqlite.sql": "sqlite"
+  },
+
+  // If SQLFluff / SQL Formatter extensions are installed, use SQLite dialect
+  "sqlfluff.linter.dialect": "sqlite",
+  "sql-formatter.dialect": "sqlite",
+
+  // Reduce MSSQL extension noise in this workspace
+  "mssql.intelliSense.enableErrorChecking": false,
+  "mssql.enableTelemetry": false,
+
+  // Improve GitHub Actions YAML validation via schema
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.{yml,yaml}"
+  }
+}

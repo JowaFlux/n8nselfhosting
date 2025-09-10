@@ -1,0 +1,12 @@
+### Chat
+POST http://localhost:11434/api/chat
+Content-Type: application/json
+
+{
+  "model": "llama3.2:latest",
+  "messages": [
+    { "role": "system", "content": "Du bist präzise." },
+    { "role": "user", "content": "Fasse den Nutzen von n8n in 1 Satz zusammen." }
+  ],
+  "stream": false
+}

@@ -1,0 +1,8 @@
+{
+  "models": {"chat": "${CHAT_MODEL}", "embedding": "${EMBED_MODEL}"},
+  "rag": {"chunk_size": 1000, "overlap": 200, "top_k": ${TOP_K}},
+  "quality_gate": {"target_score": ${TARGET_SCORE}, "max_loops": ${MAX_LOOPS}},
+  "sheets": {"id": "${GSHEETS_DB_ID}", "gid": "${GSHEETS_GID}"},
+  "drive": {"folder_id": "${GDRIVE_FOLDER_ID}", "readonly": ${GDRIVE_READONLY}},
+  "websearch": {"enabled": ${WEBSEARCH_ENABLED}, "provider": "${WEBSEARCH_PROVIDER}"}
+}

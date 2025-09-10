@@ -1,0 +1,18 @@
+{
+  "action": "Ollama-n8n Connectivity Test",
+  "owner": "VS-Entwickler",
+  "started_at_utc": "2025-09-09T12:00:00Z",
+  "finished_at_utc": "2025-09-09T12:10:00Z",
+  "result": "success",
+  "artifacts": {
+    "evidence_path": "./data/proofs/ollama-n8n-conn-20250909-1210.tar.gz",
+    "report": "docs/testberichte/ollama-n8n-conn-20250909.md"
+  },
+  "checks": {
+    "ollama_host": "ok",
+    "ollama_n8n_container": "ok",
+    "chat_workflow": "ok"
+  },
+  "notes": "Modell llama3.2 erreichbar; Chat-Workflow liefert Antwort zurück."
+}
+<parameter name="filePath">/Users/macbook/Downloads/n8nselfhosting/docs/SOP-funkmeldung-ollama-n8n.json

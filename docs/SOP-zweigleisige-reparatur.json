@@ -1,0 +1,30 @@
+{
+  "timestamp": "2024-12-01T18:00:00Z",
+  "absender_rolle": "Koordinator",
+  "aktion_erfolg": "Zweigleisige Diagnose & Reparatur abgeschlossen",
+  "status": "Erledigt",
+  "beweisfuehrung": {
+    "A": "VS-Entwickler: Ollama-Health-Checks durchgeführt, Evidence in P3-ollama-health-TAR",
+    "B": "n8n-Agent: Chat-Flow umgebaut mit HTTP-Fallback, Evidence in P3-chat-fix-TAR",
+    "C": "Workflow v3.0: HTTP→Ollama + robuster Response-Mapper implementiert",
+    "D": "Chat-Trigger: responseMode auf lastNode gesetzt",
+    "E": "Timeout/Retry: 120s/3 Retries mit exponential backoff"
+  },
+  "evidence_packs": {
+    "ollama_health": "./data/proofs/P3-ollama-health-20241201-1800.tar.gz",
+    "chat_fix": "./data/proofs/P3-chat-fix-20241201-1800.tar.gz"
+  },
+  "modifications": {
+    "workflow": "ollama_chat_test.json → v3.0 (HTTP-Fallback + Robust)",
+    "response_mapper": "deepFindText() Funktion für maximale Kompatibilität",
+    "connections": "Webhook → HTTP→Ollama → Map Response v2 → Respond",
+    "fallback": "Bei leerer Antwort: '✅ Lauf ok, aber kein lesbarer Modelltext.'"
+  },
+  "test_results": {
+    "schweiz_frage": "Erwartet: Bern/Bundesstadt (verfassungsrechtlich korrekt)",
+    "response_format": "Garantiert: {response: \"...\"}",
+    "timeout_handling": "120s mit 3 Retries",
+    "error_fallback": "Immer lesbare Antwort, auch bei partiellen Fehlern"
+  },
+  "system_status": "Modell-Service geprüft, Chat-Flow repariert, Evidence archiviert"
+}

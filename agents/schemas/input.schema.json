@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": ["run_id", "source", "options"],
+  "properties": {
+    "run_id": { "type": "string" },
+    "source": {
+      "type": "object",
+      "properties": {
+        "video_url": { "type": "string" },
+        "audio_url": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "do_transcribe": { "type": "boolean", "default": true },
+        "do_clipping": { "type": "boolean", "default": true },
+        "do_content": { "type": "boolean", "default": true },
+        "write_notion": { "type": "boolean", "default": true },
+        "language": { "type": "string", "default": "de" }
+      }
+    }
+  }
+}

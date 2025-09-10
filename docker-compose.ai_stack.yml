@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"         # optional: entferne die Portmap, wenn nur intern
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:11434/api/tags"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # ——— Owner/Basic-Auth (per .env überschreiben) ———
+      - N8N_PERSONALIZATION_ENABLED=false
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:?set in .env}
+      # ——— Basis-URL (falls Reverse Proxy/Domain im Einsatz) ———
+      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
+      # ——— Timezone (Logs/Evidence) ———
+      - TZ=Europe/Zurich
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5678/"]
+      interval: 20s
+      timeout: 5s
+      retries: 20
+
+networks:
+  default:
+    name: ai_stack
+
+volumes:
+  n8n_data:
+  ollama_data:

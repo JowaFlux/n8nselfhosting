@@ -1,0 +1,80 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Stack: Up",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "problemMatcher": []
+    },
+    {
+      "label": "Stack: Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Ollama: Pull Model llama3.2",
+      "type": "shell",
+      "command": "docker exec ollama ollama pull llama3.2",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: Ollama Chat",
+      "type": "shell",
+      "command": "curl -s http://localhost:11434/api/chat -H 'Content-Type: application/json' -d '{\"model\":\"llama3.2\",\"messages\":[{\"role\":\"system\",\"content\":\"Du bist präzise.\"},{\"role\":\"user\",\"content\":\"Erkläre n8n in 1 Satz.\"}],\"stream\":false}' | jq .",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: Ollama Generate",
+      "type": "shell",
+      "command": "curl -s http://localhost:11434/api/generate -H 'Content-Type: application/json' -d '{\"model\":\"llama3.2\",\"prompt\":\"Sag Hallo in einem Satz.\",\"stream\":false}' | jq .",
+      "problemMatcher": []
+    },
+    {
+      "label": "n8n: Open UI",
+      "type": "shell",
+      "command": "python - <<'PY'\nimport webbrowser; webbrowser.open('http://localhost:5678')\nPY",
+      "problemMatcher": []
+    },
+    {
+      "label": "n8n: Import Workflow (API)",
+      "type": "shell",
+      "command": "curl -s -u ${N8N_USER}:${N8N_PASS} -H 'Content-Type: application/json' -d @n8n-workflows/ollama-chat.json http://localhost:5678/rest/workflows | jq .id",
+      "problemMatcher": []
+    },
+    {
+      "label": "Everything: Full Setup & Test",
+      "type": "shell",
+      "command": "echo '🚀 Starting full setup...' && docker compose up -d && echo '⏳ Waiting for services...' && sleep 10 && docker exec ollama ollama pull llama3.2 && echo '✅ Setup complete! Open n8n at http://localhost:5678'",
+      "problemMatcher": []
+    },
+    {
+      "label": "VS Code Agent – Übersicht",
+      "type": "shell",
+      "command": "node tools/overview/overview.js",
+      "options": {
+        "env": {
+          "N8N_BASE_URL": "http://localhost:5678",
+          "N8N_API_KEY": "${env:N8N_API_KEY}",
+          "PROJECT_WORKFLOWS_DIR": "${workspaceFolder}/workflows",
+          "PROJECT_CUSTOM_NODES_DIR": "${workspaceFolder}/custom-nodes"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "VS Code Agent – Auto-Import",
+      "type": "shell",
+      "command": "node tools/overview/auto-import.js",
+      "options": {
+        "env": {
+          "N8N_BASE_URL": "http://localhost:5678",
+          "N8N_API_KEY": "${env:N8N_API_KEY}",
+          "PROJECT_WORKFLOWS_DIR": "${workspaceFolder}/workflows"
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

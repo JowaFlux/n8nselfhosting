@@ -1,0 +1,83 @@
+{
+  "name": "Gordon Play Runner",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "gordon-play",
+        "httpMethod": "POST"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Policy-Check: allow only commands matching whitelist regex\nconst body = $json;\nconst commands = body.commands || [];\nconst whitelist = [/^docker(\s+(ps|logs|pull|run|rm|compose(\s+(up|down))|exec|images|volume))?/, /^bash/, /^sh/];\nconst blacklist = [/rm\s+-rf/, /--network/, /curl\s+http:\/\//i];\nlet ok = true;\nlet reason = '';\nfor (const c of commands) {\n  if (blacklist.some(rx => rx.test(c))) { ok = false; reason = 'Blacklisted pattern detected'; break; }\n  if (!whitelist.some(rx => rx.test(c))) { ok = false; reason = 'Not allowed by whitelist: ' + c; break; }\n}\nreturn [{ json: { ok, reason, commands } }];"
+      },
+      "name": "Policy Check",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [520, 220]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Build a temporary script from commands and write metadata\nconst body = $json;\nconst commands = body.commands || [];\nconst script = commands.join('\n');\nconst filename = '/tmp/gordon_play_' + Date.now() + '.sh';\nreturn [{ json: { script, filename, task: body.task || 'gordon-play', who: body.who || 'n8n-Agent', utc_started_at: body.utc_started_at || new Date().toISOString() } }];"
+      },
+      "name": "Build Script",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [760, 220]
+    },
+    {
+      "parameters": {
+        "command": "={{ $json.script }}",
+        "options": {}
+      },
+      "name": "Execute Command",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Collect outputs and prepare evidence payload\nconst start = $json.utc_started_at || new Date().toISOString();\nconst end = new Date().toISOString();\nconst meta = { task: $json.task, who: $json.who, started_at: start, ended_at: end, duration_sec: Math.round((new Date(end)-new Date(start))/1000) };\nconst evidencePath = '/data/proofs/' + meta.task + '-evidence-' + (new Date()).toISOString().replace(/[:.]/g,'') + '.tar.gz';\nreturn [{ json: { meta, stdout: $json.stdout || '', stderr: $json.stderr || '', evidencePath } }];"
+      },
+      "name": "Prepare Evidence",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1240, 220]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5678/webhook/proof-collector",
+        "options": {}
+      },
+      "name": "Call Proof Collector",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1480, 220]
+    },
+    {
+      "parameters": {
+        "responseMode": "onReceived",
+        "responseData": "={{ $json }}"
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.response",
+      "typeVersion": 1,
+      "position": [1720, 220]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Policy Check", "type": "main", "index": 0 }]] },
+    "Policy Check": { "main": [[{ "node": "Build Script", "type": "main", "index": 0 }]] },
+    "Build Script": { "main": [[{ "node": "Execute Command", "type": "main", "index": 0 }]] },
+    "Execute Command": { "main": [[{ "node": "Prepare Evidence", "type": "main", "index": 0 }]] },
+    "Prepare Evidence": { "main": [[{ "node": "Call Proof Collector", "type": "main", "index": 0 }]] },
+    "Call Proof Collector": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": 1
+}

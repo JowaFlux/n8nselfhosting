@@ -1,0 +1,4 @@
+{
+  "recommendations": ["ms-azuretools.vscode-docker", "humao.rest-client", "streetsidesoftware.code-spell-checker", "yzhang.markdown-all-in-one"],
+  "unwantedRecommendations": ["ms-mssql.mssql"]
+}

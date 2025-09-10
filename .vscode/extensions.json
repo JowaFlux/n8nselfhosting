@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "redhat.vscode-yaml",
+    "adpyke.vscode-sql-formatter",
+    "alexcvzz.vscode-sqlite"
+  ],
+  "unwantedRecommendations": [
+    "ms-mssql.mssql",
+    "GitHub.vscode-github-actions"
+  ]
+}

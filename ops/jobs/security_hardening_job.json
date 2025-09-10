@@ -1,0 +1,20 @@
+{
+  "job": "Finalize production hardening for n8n behind Caddy",
+  "deliverables": [
+    "proxy/Caddyfile",
+    ".env.caddy",
+    "docs/proxy_hardening.md"
+  ],
+  "acceptance_criteria": [
+    "HTTPS aktiv, HSTS gesetzt, Basic-Auth bleibt vorgeschaltet",
+    "Optionales Rate-Limit aktiv",
+    "Optionales IP-Allowlisting dokumentiert und testbar",
+    "N8N_SECURE_COOKIE=true bei HTTPS"
+  ],
+  "tests": [
+    "curl -I https://your-domain.tld  # 200 + HSTS",
+    "curl -I http://your-domain.tld   # 308 Redirect auf https",
+    "ohne Auth -> 401, mit Auth -> UI lädt",
+    "Webhooks funktionieren über HTTPS"
+  ]
+}

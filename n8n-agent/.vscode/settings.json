@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.sqlite.sql": "sqlite",
+    "schema.sqlite.sql": "sqlite"
+  },
+  "mssql.intelliSense.enableErrorChecking": false,
+  "mssql.enableTelemetry": false
+}

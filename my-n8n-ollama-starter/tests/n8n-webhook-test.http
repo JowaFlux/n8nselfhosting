@@ -1,0 +1,9 @@
+### n8n Webhook → Ollama
+POST http://localhost:5678/webhook/ollama-chat
+Content-Type: application/json
+
+{
+  "model": "llama3.2",
+  "system": "Du antwortest knapp und klar.",
+  "prompt": "Fasse den Nutzen von n8n + Ollama in 1 Satz zusammen."
+}

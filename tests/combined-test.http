@@ -1,0 +1,31 @@
+### Ollama Direct Chat Test
+POST http://localhost:11434/api/chat
+Content-Type: application/json
+
+{
+  "model": "llama3.2:latest",
+  "messages": [
+    { "role": "system", "content": "Du bist präzise." },
+    { "role": "user", "content": "Erkläre n8n in 1 Satz." }
+  ],
+  "stream": false
+}
+
+###
+
+### n8n Webhook Test (Workflow muss aktiv sein)
+POST http://localhost:5678/webhook/ollama-chat
+Content-Type: application/json
+
+{
+  "model": "llama3.2:latest",
+  "system": "Du antwortest knapp auf Deutsch.",
+  "prompt": "Fasse den Nutzen von n8n + Ollama in 1 Satz."
+}
+
+###
+
+### Ollama Health Check
+GET http://localhost:11434/api/tags
+
+###

@@ -1,0 +1,104 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Proxy: Reload",
+      "type": "shell",
+      "command": "docker compose -f docker/compose.proxy.yml up -d && sleep 1 && docker exec caddy-n8n-proxy caddy reload --config /etc/caddy/Caddyfile",
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate Schema",
+      "type": "shell",
+      "command": "sqlite3 ./data/knowledge.sqlite < ./scripts/schema.sqlite.sql && sqlite3 ./data/knowledge.sqlite '.schema' | head -n 20",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/n8n-agent"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Acceptance Test",
+      "type": "shell",
+      "command": "./run_acceptance_test.sh",
+      "group": "test",
+      "options": {
+        "cwd": "${workspaceFolder}/n8n-agent"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Generate Proof Report",
+      "type": "shell",
+      "command": "./scripts/proof_report.sh",
+      "group": "test",
+      "options": {
+        "cwd": "${workspaceFolder}/n8n-agent"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Check Docker Services",
+      "type": "shell",
+      "command": "docker compose ps",
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Start n8n Stack",
+      "type": "shell",
+      "command": "docker compose up -d",
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Stop n8n Stack",
+      "type": "shell",
+      "command": "docker compose down",
+      "group": "build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    }
+  ]
+}

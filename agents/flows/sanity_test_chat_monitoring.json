@@ -1,0 +1,158 @@
+{
+  "name": "Sanity Test - Chat Monitoring",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [-400, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.example.com/webhook/chat",
+        "method": "POST",
+        "jsonParameters": true,
+        "bodyParametersJson": "{\"message\":\"Sanity-Test: Sag kurz pong\"}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic YWRtaW46Q0hBTkdFX01FXzMyQ0hBUlMh"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "retryOnFail": true,
+          "maxRetries": 2
+        }
+      },
+      "id": "chat_test",
+      "name": "Test Chat Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-160, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const response = $json;\nconst timestamp = new Date().toISOString();\nconst success = response?.response && typeof response.response === 'string' && response.response.trim().length > 0;\nconst status = success ? 'OK' : 'FAIL';\n\n// Log to file\nconsole.log(`[${timestamp}] Sanity Test: ${status} - Response: ${JSON.stringify(response)}`);\n\nreturn [{ json: {\n  timestamp,\n  status,\n  response: response?.response || 'No response',\n  test_message: 'Sanity-Test: Sag kurz pong',\n  success\n} }];"
+      },
+      "id": "validate",
+      "name": "Validate Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [80, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.success }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "if_fail",
+      "name": "If Failed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [320, -100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Send alert to Koordinator\nconsole.error(`🚨 SANITY TEST FAILED: ${JSON.stringify($json)}`);\n\n// Could send email, webhook, or log to external system\nreturn [{ json: {\n  alert: 'Sanity Test Failed',\n  timestamp: $json.timestamp,\n  details: $json,\n  action_required: 'Check n8n Chat functionality'\n} }];"
+      },
+      "id": "alert",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [560, -100]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Success logging\nconst log = {\n  timestamp: $json.timestamp,\n  status: 'SUCCESS',\n  response_length: $json.response?.length || 0,\n  uptime_check: true\n};\n\nconsole.log(`✅ Sanity Test OK: ${JSON.stringify(log)}`);\n\nreturn [{ json: log }];"
+      },
+      "id": "success_log",
+      "name": "Success Log",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [560, 100]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Test Chat Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Response": {
+      "main": [
+        [
+          {
+            "node": "If Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Failed": {
+      "main": [
+        [
+          {
+            "node": "Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  }
+}

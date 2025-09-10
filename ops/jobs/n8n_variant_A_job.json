@@ -1,0 +1,45 @@
+{
+  "job": "Implement n8n Variant A with long-lived login, persistence, health/drift and auto-import",
+  "context": {
+    "stack": ["docker", "node18+", "git", "vscode"],
+    "host": "local",
+    "timezone": "Europe/Zurich"
+  },
+  "env": {
+    "N8N_BASE_URL": "http://localhost:5678",
+    "N8N_API_KEY": "${{ secrets.N8N_API_KEY }}",
+    "JWT_HOURS": 720,
+    "WORKFLOWS_DIR": "./workflows",
+    "CUSTOM_NODES_DIR": "./custom-nodes"
+  },
+  "deliverables": [
+    "docker/compose.n8n.yml",
+    ".env.n8n",
+    "tools/overview/fs-scan.js",
+    "tools/overview/overview.js",
+    "tools/overview/auto-import.js",
+    "overview.http",
+    ".vscode/tasks.json",
+    "docs/n8n_health_drift.md"
+  ],
+  "acceptance_criteria": [
+    "Nach `docker compose up -d -f docker/compose.n8n.yml` erscheint kein Setup-Wizard mehr nach Neustarts.",
+    "Einmaliges Login bleibt für >= 30 Tage bestehen (Session-Cookie vorhanden).",
+    "Task 'VS Code Agent – Übersicht' liefert JSON-Report (Workflows/Custom-Nodes/Executions).",
+    "Task 'VS Code Agent – Auto-Import' importiert/aktualisiert Workflows aus dem Repo ohne Fehler.",
+    "overview.http Endpunkte antworten 200.",
+    "Drift-Report dokumentiert Server-only & Local-only Workflows."
+  ],
+  "tests": [
+    "Restart-Test: Container neu starten -> Direkt im Editor, kein Setup",
+    "Session-Test: Cookie vorhanden, erneuter Zugriff ohne Login",
+    "Drift-Test: Eine lokale Workflow-Datei umbenennen und Auto-Import ausführen -> Server aktualisiert",
+    "API-Test: /rest/workflows, /rest/executions-current, /rest/executions?limit=25 -> 200 OK"
+  ],
+  "rollback": [
+    "Stoppe Container, sichere Volume n8n_data (Tarball).",
+    "Stelle vorherige docker/compose.n8n.yml aus Git wieder her.",
+    "Setze .env.n8n Werte zurück (JWT_HOURS auf alten Wert).",
+    "Bei Login-Problemen: lösche Browser-Cookies nur für localhost (keine Server-Resets)."
+  ]
+}

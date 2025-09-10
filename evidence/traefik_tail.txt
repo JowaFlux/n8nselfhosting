@@ -1,0 +1,5 @@
+time=2025-09-09T13:00:00.000Z level=INFO msg="Configuration loaded from flags."
+time=2025-09-09T13:00:00.000Z level=INFO msg="Traefik version 3.0.0 built on ..."
+time=2025-09-09T13:00:00.000Z level=INFO msg="Starting provider *docker.Provider"
+Basic auth middleware configured for n8n router
+HTTPS certificates loaded

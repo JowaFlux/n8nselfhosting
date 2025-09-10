@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "required": ["run_id", "artifacts"],
+  "properties": {
+    "run_id": { "type": "string" },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "transcript_text": { "type": "string" },
+        "language": { "type": "string" },
+        "duration_sec": { "type": "number" },
+        "markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["start", "end", "label", "confidence"],
+            "properties": {
+              "start": { "type": "number" },
+              "end": { "type": "number" },
+              "label": { "type": "string" },
+              "confidence": { "type": "number" }
+            }
+          }
+        },
+        "content": {
+          "type": "object",
+          "properties": {
+            "titles": { "type": "array", "items": { "type": "string" } },
+            "hooks": { "type": "array", "items": { "type": "string" } },
+            "descriptions": { "type": "array", "items": { "type": "string" } },
+            "hashtags": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

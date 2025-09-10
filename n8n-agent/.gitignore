@@ -1,0 +1,10 @@
+# runtime
+/data/
+/evidence/
+!/evidence/*.md
+!/evidence/GIT_REMOTE.txt
+.env
+node_modules/
+.DS_Store
+*.log
+ollama/

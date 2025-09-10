@@ -1,0 +1,98 @@
+{
+  "name": "Preflight + Warm-Up (Ollama)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "preflight",
+        "responseMode": "lastNode"
+      },
+      "id": "Chat",
+      "name": "When chat message received",
+      "type": "n8n-nodes-base.chatTrigger",
+      "typeVersion": 1,
+      "position": [-600, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/tags",
+        "options": {
+          "timeout": 10000,
+          "retryOnFail": true,
+          "maxRetries": 2
+        }
+      },
+      "id": "Tags",
+      "name": "Ollama Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-360, -100]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "method": "POST",
+        "jsonParameters": true,
+        "bodyParametersJson": "{\"model\": \"llama3.2\", \"prompt\": \"ping\", \"stream\": false}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxRetries": 2
+        }
+      },
+      "id": "Warm",
+      "name": "Warm-Up llama3.2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [-120, -100]
+    },
+    {
+      "parameters": {
+        "functionCode": "const okTags = $items(\"Ollama Tags\",0,0)?.[0]?.json?.statusCode === 200;\nconst warm = $items(\"Warm-Up llama3.2\",0,0)?.[0]?.json?.response || '';\nconst status = okTags && warm ? 'ok' : 'fail';\nreturn [{ json: { response: status==='ok' ? 'Preflight & Warm-Up ok' : 'Preflight/Warm-Up fehlgeschlagen', details: { okTags, warm: warm.slice(0,120) } } }];"
+      },
+      "id": "Map",
+      "name": "Map Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [120, -100]
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Ollama Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Tags": {
+      "main": [
+        [
+          {
+            "node": "Warm-Up llama3.2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm-Up llama3.2": {
+      "main": [
+        [
+          {
+            "node": "Map Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all"
+  }
+}

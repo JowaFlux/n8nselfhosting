@@ -1,0 +1,26 @@
+{
+  "job": "Add webhook policy with safe Basic-Auth bypass, rate limits, optional IP allowlist, and HMAC verification snippet",
+  "deliverables": [
+    "proxy/Caddyfile",
+    "proxy/nginx.conf",
+    "docs/webhook_policy.md",
+    "n8n/hmac_verify_snippet.md"
+  ],
+  "acceptance_criteria": [
+    "Paths /webhook/* and /webhook-test/* reachable without Basic-Auth",
+    "All other paths require Basic-Auth",
+    "Rate-limit active for webhook paths",
+    "Optional IP allowlist can be enabled via .env.caddy",
+    "HMAC verification snippet present and tested in a sample workflow"
+  ],
+  "tests": [
+    "curl -I http://localhost:8080/  # 401",
+    "curl -I http://localhost:8080/webhook/test  # 200/2xx",
+    "ab -n 100 -c 50 http://localhost:8080/webhook/test  # some 429 under pressure",
+    "Webhook with wrong signature -> rejected in workflow (reason: bad-signature)"
+  ],
+  "rollback": [
+    "Restore previous proxy/Caddyfile and reload",
+    "Disable HMAC step by removing Function-Node"
+  ]
+}

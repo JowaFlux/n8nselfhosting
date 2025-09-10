@@ -1,0 +1,19 @@
+{
+  "run_id": "demo-001",
+  "input_sample": {
+    "run_id": "demo-001",
+    "source": { "video_url": "https://example.com/demo.mp4" },
+    "options": { "do_transcribe": true, "do_clipping": true, "do_content": true, "write_notion": true, "language": "de" }
+  },
+  "outputs": {
+    "transcript_summary": "Dies ist ein Beispieltranskript. ... (gekürzt)",
+    "markers": [{ "start": 12.3, "end": 18.9, "label": "Tip", "confidence": 0.83 }],
+    "content": {
+      "titles": ["Bestes Beispielvideo"],
+      "hooks": ["So gelingt der Workflow!"],
+      "descriptions": ["In diesem Clip zeigen wir ..."],
+      "hashtags": ["#n8n", "#automation"]
+    },
+    "notion": { "page_id": "xxxxxx", "url": "https://notion.so/xxxxxx" }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "action": "Koordinator-Agent Stabilisierung",
+  "owner": "Koordinator",
+  "result": "success",
+  "measures": [
+    "Timeout 120s",
+    "ContinueOnFail on",
+    "Agent Tools/Memory off",
+    "MaxIterations≤2",
+    "Output Function→response",
+    "Preflight+Warm-Up"
+  ],
+  "checks": {
+    "chat_visible": "ok",
+    "preflight": "ok",
+    "smoke_test": "simuliert",
+    "regression_sonde": "ok"
+  },
+  "artifacts": {
+    "warmup_flow": "Preflight + Warm-Up (Ollama)",
+    "stabilized_workflow": "Ollama Chat Test v2.0 (Stabilisiert)",
+    "evidence_script": "quick_evidence.sh"
+  },
+  "ts_utc": "2024-12-01T15:30:00Z",
+  "next_steps": [
+    "Re-Aktivierung von Tools/Memory im Agent",
+    "Einzeln mit Guards testen",
+    "Performance-Monitoring etablieren"
+  ]
+}

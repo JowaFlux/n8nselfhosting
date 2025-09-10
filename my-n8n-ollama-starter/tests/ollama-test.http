@@ -1,0 +1,12 @@
+### Ollama Chat (lokal)
+POST http://localhost:11434/api/chat
+Content-Type: application/json
+
+{
+  "model": "llama3.2",
+  "messages": [
+    { "role": "system", "content": "Du bist präzise." },
+    { "role": "user", "content": "Erkläre n8n in 1 Satz." }
+  ],
+  "stream": false
+}

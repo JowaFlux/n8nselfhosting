@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {"label": "Mac: Up", "type": "shell", "command": "./bin/dev-up mac"},
+    {"label": "Linux: Up", "type": "shell", "command": "./bin/dev-up linux"},
+    {"label": "Down", "type": "shell", "command": "./bin/dev-down"},
+    {"label": "Test: Chat", "type": "shell", "command": "./scripts/test_chat.sh"},
+    {"label": "Prepare: SQLite", "type": "shell", "command": "./scripts/test_index.sh"},
+    {"label": "DB: Apply schema (sqlite)", "type": "shell", "command": "sqlite3 ./data/knowledge.sqlite < ./scripts/schema.sqlite.sql && sqlite3 ./data/knowledge.sqlite \".schema\" | head -n 40", "problemMatcher": []},
+    {"label": "CI: Check Secrets", "type": "shell", "command": "./scripts/check_secrets.sh"},
+    {"label": "CI: actionlint (optional)", "type": "shell", "command": "command -v actionlint >/dev/null || (echo 'actionlint not found - install with: brew install actionlint' && exit 1); actionlint .github/workflows/*.yml", "problemMatcher": []},
+    {"label": "Report: Proof", "type": "shell", "command": "./scripts/proof_report.sh"},
+    {"label": "Git: Init & Push", "type": "shell", "command": "./scripts/git_init_push.sh"},
+    {"label": "Git: Report", "type": "shell", "command": "./scripts/git_report.sh"},
+    {"label": "Audit: Aggregate", "type": "shell", "command": "./scripts/audit_aggregate.sh"},
+    {"label": "Git: Install Hooks", "type": "shell", "command": "./scripts/install_hooks.sh"}
+  ]
+}

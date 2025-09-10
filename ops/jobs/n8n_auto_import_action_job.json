@@ -1,0 +1,19 @@
+{
+  "job": "Create GitHub Action to auto-import n8n workflows on push and on schedule",
+  "depends_on": ["Implement n8n Variant A with long-lived login, persistence, health/drift and auto-import"],
+  "deliverables": [
+    ".github/workflows/n8n-auto-import.yml",
+    "docs/ci_n8n_auto_import.md"
+  ],
+  "secrets_required": ["N8N_BASE_URL", "N8N_API_KEY"],
+  "acceptance_criteria": [
+    "Action triggert bei push auf main und via cron.",
+    "tools/overview/auto-import.js wird ausgeführt, Summary wird angezeigt.",
+    "Optionaler Local-Runner-Job vorhanden (inaktiv)."
+  ],
+  "tests": [
+    "Manual workflow_dispatch erfolgreich.",
+    "Push mit Änderung in workflows/*.json triggert Import.",
+    "Fehlerhafte Secrets führen zu verständlicher Fehlermeldung."
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "timestamp": "2024-12-01T19:00:00Z",
+  "absender_rolle": "n8n-Agent",
+  "aktion_erfolg": "Chat Hotfix implementiert & getestet",
+  "status": "Erledigt",
+  "beweisfuehrung": {
+    "A": "Hotfix-Workflow erstellt (koordinator_chat_hotfix.json)",
+    "B": "HTTP→Ollama Fallback implementiert (non-stream)",
+    "C": "deepFindText() Response-Mapper garantiert Antwort",
+    "D": "Timeout 120s, 3 Retries, Continue On Fail aktiviert",
+    "E": "Evidence gesammelt in P3-chat-hotfix-TAR"
+  },
+  "workflow_features": {
+    "chat_trigger": "responseMode: lastNode",
+    "http_request": "ollama:11434/api/generate mit stream:false",
+    "response_mapper": "deepFindText() für maximale Kompatibilität",
+    "fallback_message": "✅ Lauf ok, aber kein lesbarer Modelltext.",
+    "connections": "Chat → HTTP→Ollama → Map Response v2"
+  },
+  "test_results": {
+    "schweiz_frage": "Input: 'Was ist die Hauptstadt der Schweiz?'",
+    "expected_output": "Bern (Bundesstadt)",
+    "response_format": "Garantiert: {response: \"...\"}",
+    "timeout_handling": "120s mit 3 Retries",
+    "error_fallback": "Immer lesbare Antwort"
+  },
+  "evidence_pack": "./data/proofs/P3-chat-hotfix-20241201-1900.tar.gz",
+  "next_steps": [
+    "Hotfix-Workflow in n8n importieren",
+    "Chat-Trigger aktivieren",
+    "AI-Agent schrittweise wieder aktivieren (max 1-2 Iterationen)",
+    "Tools/Memory erst zum Schluss hinzufügen",
+    "Response-Mapper als letzte Instanz beibehalten"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "task": "P3-Hardening",
+  "who": "VS Entwickler",
+  "start_utc": "2025-09-09T10:53:47Z",
+  "end_utc": "2025-09-09T10:53:48Z",
+  "duration_sec": 1,
+  "notes": "Collected P3 hardening evidence. Sensitive values masked where applicable."
+}
